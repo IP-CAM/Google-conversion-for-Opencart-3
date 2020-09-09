@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+    <name>Google conversion</name>
+    <code>google_conversion</code>
+    <version>1.0.0</version>
+    <author>Vandeko</author>
+    <link>https://github.com/Vandeko1</link>
+    <date>2020.09.09</date>
+    <file path="catalog/controller/checkout/success.php">
+        <operation>
+            <search>
+                <![CDATA[
+    			    if (isset($this->session->data['order_id'])) {
+                ]]>
+            </search>
+            <add position="after">
+                <![CDATA[
+                     $this->load->model('account/order');
+
+                    $data['order_id']       = $this->session->data['order_id'];
+                    $data['order_info']     = $this->model_account_order->getOrder($this->session->data['order_id']);
+                    $data['order_totals']   = $this->model_account_order->getOrderTotals($this->session->data['order_id']);
+                    $data['order_products'] = $this->model_account_order->getOrderProducts($this->session->data['order_id']);
+
+                    $shipping = 0;
+
+                    foreach ($data['order_totals'] as $row) {
+                        if ($row['code'] == 'shipping') {
+                            $shipping = $row['value'];
+                        }
+                    }
+
+                    $data['shipping'] = $shipping;
+                    $tax = 0;
+
+                    foreach ($data['order_products'] as $row) {
+                        $tax = $tax + $row['tax'];
+                    }
+
+                    $data['tax'] = $tax;
+                ]]>
+            </add>
+        </operation>
+        <operation>
+            <search>
+                <![CDATA[
+                    if ($this->customer->isLogged()) {
+                        $data['text_message'] = sprintf($this->language->get('text_customer'), $this->url->link('account/account', '', true), $this->url->link('account/order', '', true), $this->url->link('account/download', '', true), $this->url->link('information/contact'));
+                    } else {
+                        $data['text_message'] = sprintf($this->language->get('text_guest'), $this->url->link('information/contact'));
+                    }
+                ]]>
+            </search>
+            <add position="replace">
+                <![CDATA[
+                    if ($this->customer->isLogged()) {
+                        $data['text_message'] = sprintf($this->language->get('text_customer'),
+                        $this->language->get('order_info'), 
+                        $this->url->link('account/account', '', true), 
+                        $this->url->link('account/order', '', true), 
+                        $this->url->link('account/download', '', true), 
+                        $this->url->link('information/contact'));
+                    } else {
+                        $data['text_message'] = sprintf($this->language->get('text_guest'),
+                        $this->language->get('order_info'), 
+                        $this->url->link('information/contact'));
+                    }
+                ]]>
+            </add>
+        </operation>
+    </file>
+    <file path="catalog/view/theme/default/template/common/success.twig">
+        <operation>
+            <search>
+                <![CDATA[
+                    {{ text_message }}
+                   ]]>
+            </search>
+            <add position="replace">
+                <![CDATA[
+                    <p>{{ order_info_txt }} {{ order_id }}</p>{{ text_message }}
+                ]]>
+            </add>
+        </operation>
+        <operation>
+            <search>
+                <![CDATA[
+                    <div id="common-success" class="container">
+                   ]]>
+            </search>
+            <add position="before">
+                <![CDATA[
+                    <script type="text/javascript">
+                    window.dataLayer = window.dataLayer || [];
+                    window.dataLayer.push({
+                            "event": "purchase",
+                            "transaction_id": "{{ order_id }}",
+                            "affiliation": "{{ order_info.store_name }}",
+                            "value": "{{ order_info.total }}",
+                            "currency": "{{ order_info.currency_code }}",
+                            "tax": "{{ tax }}",
+                            "shipping": "{{ shipping }}",
+                            "items": [
+                                 {% for row in order_products %}
+                                    {"id": "{{ loop.index }}",
+                                    "name": "{{ row.name }}",
+                                    "quantity": "{{ row.quantity }}",
+                                    "price": "{{ row.price }}"}
+                                {% if loop.last == false %},{% endif %}
+                                {% endfor %}
+                            ]
+                        });
+                    </script>
+                ]]>
+            </add>
+        </operation>
+    </file>
+    <file path="catalog/view/theme/{{YOUR_THEME_NAME}}/template/common/header.twig">
+        <operation>
+            <search>
+                <![CDATA[
+                <head>
+               ]]>
+            </search>
+            <add position="after">
+                <![CDATA[
+                    <!-- Google Tag Manager -->   
+                    <script type="text/javascript">
+                    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+                    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+                    })(window,document,'script','dataLayer','{{YOUR_GTM_ID}}');</script>
+                    <!-- End Google Tag Manager -->
+                ]]>
+            </add>
+        </operation>
+    </file>
+    <file path="catalog/language/ru-ru/checkout/success.php">
+        <operation>
+            <search>
+                <![CDATA[
+                        $_['text_success']         = 'Заказ принят';
+                   ]]>
+            </search>
+            <add position="after">
+                <![CDATA[
+                    $_['order_info_txt'] = 'Номер вашего заказа:';
+                ]]>
+            </add>
+        </operation>
+    </file>
+    <file path="catalog/language/uk-ua/checkout/success.php">
+        <operation>
+            <search>
+                <![CDATA[
+                        $_['text_success'] = 'Замовлення прийнято';
+                   ]]>
+            </search>
+            <add position="after">
+                <![CDATA[
+                    $_['order_info_txt'] = 'Номер вашого замовлення:';
+                ]]>
+            </add>
+        </operation>
+    </file>
+    <file path="catalog/language/en-gb/checkout/success.php">
+        <operation>
+            <search>
+                <![CDATA[
+                        $_['text_success']  = 'Success';
+                   ]]>
+            </search>
+            <add position="after">
+                <![CDATA[
+                    $_['order_info_txt'] = 'Your order number:';
+                ]]>
+            </add>
+        </operation>
+    </file>
+</modification>
